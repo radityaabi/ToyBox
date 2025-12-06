@@ -15,7 +15,7 @@ bun run dev
 ## API Documentation
 
 - Local: http://localhost:3000
-- Production (choose one): https://toybox.radityaabi.com
+- Production : https://toybox.radityaabi.com
 
 | Endpoint       | HTTP     | Description       |
 | -------------- | -------- | ----------------- |
