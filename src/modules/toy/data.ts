@@ -1,23 +1,8 @@
-type Toy = {
-  id: string;
-  name: string;
-  slug: string;
-  categories: {
-    id: number;
-    name: string;
-  };
-  brand: string;
-  price: number;
-  age_range: string;
-  image: string;
-  description: string;
-  created_at: string;
-  updated_at: string;
-};
+import { Toy } from "./types/toy";
 
 type Toys = Toy[];
 
-export const toysData: Toys = [
+export const Toys: Toys = [
   {
     id: "T001",
     name: "Rocket Shooter",
@@ -31,8 +16,8 @@ export const toysData: Toys = [
     age_range: "5-10",
     image: "https://example.com/toys/rocket_shooter.png",
     description: "Mainan roket busa untuk aktivitas outdoor.",
-    created_at: "2025-01-01T10:00:00Z",
-    updated_at: "2025-01-01T10:00:00Z",
+    created_at: new Date("2025-01-01T10:00:00Z"),
+    updated_at: null,
   },
   {
     id: "T002",
@@ -47,8 +32,8 @@ export const toysData: Toys = [
     age_range: "3-8",
     image: "https://example.com/toys/building_blocks.png",
     description: "Set blok bangunan berwarna-warni untuk kreativitas.",
-    created_at: "2025-01-02T09:30:00Z",
-    updated_at: "2025-01-05T14:20:00Z",
+    created_at: new Date("2025-01-02T09:30:00Z"),
+    updated_at: null,
   },
   {
     id: "T003",
@@ -63,8 +48,8 @@ export const toysData: Toys = [
     age_range: "6-12",
     image: "https://example.com/toys/rc_car.png",
     description: "Mobil RC dengan kecepatan tinggi dan lampu LED.",
-    created_at: "2025-01-03T11:15:00Z",
-    updated_at: "2025-01-03T11:15:00Z",
+    created_at: new Date("2025-01-03T11:15:00Z"),
+    updated_at: null,
   },
   {
     id: "T004",
@@ -79,8 +64,8 @@ export const toysData: Toys = [
     age_range: "4-7",
     image: "https://example.com/toys/doctor_set.png",
     description: "Set dokter lengkap dengan stetoskop dan alat medis mainan.",
-    created_at: "2025-01-04T08:45:00Z",
-    updated_at: "2025-01-10T16:30:00Z",
+    created_at: new Date("2025-01-04T08:45:00Z"),
+    updated_at: null,
   },
   {
     id: "T005",
@@ -95,8 +80,8 @@ export const toysData: Toys = [
     age_range: "5-10",
     image: "https://example.com/toys/water_gun.png",
     description: "Pistol air dengan kapasitas besar untuk bermain outdoor.",
-    created_at: "2025-01-05T13:20:00Z",
-    updated_at: "2025-01-05T13:20:00Z",
+    created_at: new Date("2025-01-05T13:20:00Z"),
+    updated_at: null,
   },
   {
     id: "T006",
@@ -112,8 +97,8 @@ export const toysData: Toys = [
     image: "https://example.com/toys/drawing_board.png",
     description:
       "Papan gambar magnetik yang bisa dihapus dan digunakan kembali.",
-    created_at: "2025-01-06T10:10:00Z",
-    updated_at: "2025-01-08T11:45:00Z",
+    created_at: new Date("2025-01-06T10:10:00Z"),
+    updated_at: null,
   },
   {
     id: "T007",
@@ -129,8 +114,8 @@ export const toysData: Toys = [
     image: "https://example.com/toys/robot_dino.png",
     description:
       "Dinosaurus robotik yang bisa berjalan dan mengeluarkan suara.",
-    created_at: "2025-01-07T14:50:00Z",
-    updated_at: "2025-01-07T14:50:00Z",
+    created_at: new Date("2025-01-07T14:50:00Z"),
+    updated_at: null,
   },
   {
     id: "T008",
@@ -145,8 +130,8 @@ export const toysData: Toys = [
     age_range: "3-8",
     image: "https://example.com/toys/kitchen_set.png",
     description: "Set dapur mainan lengkap dengan peralatan masak.",
-    created_at: "2025-01-08T09:00:00Z",
-    updated_at: "2025-01-12T15:20:00Z",
+    created_at: new Date("2025-01-08T09:00:00Z"),
+    updated_at: null,
   },
   {
     id: "T009",
@@ -161,8 +146,8 @@ export const toysData: Toys = [
     age_range: "6-12",
     image: "https://example.com/toys/flying_disc.png",
     description: "Frisbee warna-warni untuk bermain di taman.",
-    created_at: "2025-01-09T11:30:00Z",
-    updated_at: "2025-01-09T11:30:00Z",
+    created_at: new Date("2025-01-09T11:30:00Z"),
+    updated_at: null,
   },
   {
     id: "T010",
@@ -177,7 +162,7 @@ export const toysData: Toys = [
     age_range: "2-5",
     image: "https://example.com/toys/alphabet_puzzle.png",
     description: "Puzzle kayu dengan huruf alfabet untuk belajar membaca.",
-    created_at: "2025-01-10T08:15:00Z",
-    updated_at: "2025-01-15T10:40:00Z",
+    created_at: new Date("2025-01-10T08:15:00Z"),
+    updated_at: null,
   },
 ];
