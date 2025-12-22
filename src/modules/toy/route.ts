@@ -9,7 +9,6 @@ import {
   ReplaceToy,
   ReplaceToySchema,
   Toy,
-  ToySchema,
   UpdateToy,
   UpdateToySchema,
 } from "./schema-type";
