@@ -6,9 +6,11 @@ import { dataToys } from "./data";
 import {
   CreateToy,
   CreateToySchema,
+  ReplaceToySchema,
   Toy,
   ToySchema,
   UpdateToy,
+  UpdateToySchema,
 } from "./schema-type";
 
 export const toyRoute = new Hono();
@@ -116,70 +118,63 @@ toyRoute.post("/", zValidator("json", CreateToySchema), async (c) => {
 });
 
 // PATCH - Update a toy by ID
-toyRoute.patch("/:id", zValidator("json", ToySchema), async (c) => {
+toyRoute.patch("/:id", zValidator("json", UpdateToySchema), async (c) => {
   try {
-    const id = parseInt(c.req.param("id"));
-    const toyJSON: Toy = await c.req.json();
-    const foundToyData = toys.find((toy) => toy.id === id);
+    const id = Number(c.req.param("id"));
+    const toyJSON = c.req.valid("json");
 
-    if (!foundToyData) {
+    const foundToy = toys.find((toy) => toy.id === id);
+    if (!foundToy) {
       return c.json({ message: "Toy not found" }, 404);
     }
 
-    const updatedToy = {
-      ...foundToyData,
+    const updatedToy: Toy = {
+      ...foundToy,
       ...toyJSON,
       updatedAt: new Date(),
     };
 
-    const updatedDataToys = toys.map((toy) =>
-      toy.id === id ? updatedToy : toy
-    );
-    toys = updatedDataToys;
+    toys = toys.map((toy) => (toy.id === id ? updatedToy : toy));
 
-    return c.json({ message: "Toy data updated", data: updatedToy });
+    return c.json({
+      success: true,
+      data: updatedToy,
+    });
   } catch (error) {
     return c.json({ message: "Error updating toy data" }, 500);
   }
 });
 
 // PUT - Replace a toy by ID
-toyRoute.put("/:id", zValidator("json", ToySchema), async (c) => {
+toyRoute.put("/:id", zValidator("json", ReplaceToySchema), async (c) => {
   try {
-    const id = parseInt(c.req.param("id"));
-    const toyJSON: UpdateToy = await c.req.json();
-    const foundToyData = toys.find((toy) => toy.id === id);
+    const id = Number(c.req.param("id"));
+    const toyJSON = c.req.valid("json");
 
-    if (!foundToyData) {
-      const newToy = {
-        id: id,
+    const foundToy = toys.find((toy) => toy.id === id);
+
+    if (!foundToy) {
+      const newToy: Toy = {
+        id,
         ...toyJSON,
         createdAt: new Date(),
         updatedAt: null,
       };
 
-      const updatedDataToys = [...toys, newToy];
-      toys = updatedDataToys;
-
-      return c.json(
-        { message: "Toy not found. Created new toy.", data: newToy },
-        201
-      );
+      toys = [...toys, newToy];
+      return c.json({ message: "Toy created", data: newToy }, 201);
     }
 
-    const replacedToy = {
-      id: id,
+    const replacedToy: Toy = {
+      id,
       ...toyJSON,
-      createdAt: foundToyData.createdAt,
+      createdAt: foundToy.createdAt,
       updatedAt: new Date(),
     };
 
-    const updatedDataToys = toys.map((toy) =>
-      toy.id === id ? replacedToy : toy
-    );
-    toys = updatedDataToys;
+    toys = toys.map((toy) => (toy.id === id ? replacedToy : toy));
 
-    return c.json({ message: "Toy data replaced", data: replacedToy });
+    return c.json({ message: "Toy replaced", data: replacedToy });
   } catch (error) {
     return c.json({ message: "Error replacing toy data" }, 500);
   }

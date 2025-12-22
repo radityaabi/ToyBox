@@ -40,8 +40,20 @@ export const UpdateToySchema = ToySchema.pick({
   ageRange: true,
   image: true,
   description: true,
+}).partial();
+
+export const ReplaceToySchema = ToySchema.pick({
+  sku: true,
+  name: true,
+  slug: true,
+  brand: true,
+  price: true,
+  ageRange: true,
+  image: true,
+  description: true,
 });
 
 export type Toy = z.infer<typeof ToySchema>;
 export type CreateToy = z.infer<typeof CreateToySchema>;
 export type UpdateToy = z.infer<typeof UpdateToySchema>;
+export type ReplaceToy = z.infer<typeof ReplaceToySchema>;
