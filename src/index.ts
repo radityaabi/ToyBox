@@ -11,4 +11,9 @@ app.route("/", commonRoute);
 
 app.route("/toys", toyRoute);
 
+app.route("/categories", categoryRoute);
+// TODO
+// /categories/:categorySlug
+// GET - Retrieve toys by category ID
+
 export default app;

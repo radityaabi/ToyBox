@@ -60,25 +60,6 @@ toyRoute.get("/:slug", (c) => {
   }
 });
 
-// GET - Retrieve toys by category ID
-toyRoute.get("/category/:categoryId", (c) => {
-  try {
-    const categoryId = parseInt(c.req.param("categoryId"));
-    const filteredToys = toys.filter((toy) => toy.category?.id === categoryId);
-
-    if (filteredToys.length === 0) {
-      return c.json(
-        { message: "No toys found for the given category ID" },
-        404
-      );
-    }
-
-    return c.json(filteredToys);
-  } catch (error) {
-    return c.json({ message: "Error retrieving toys by category" }, 500);
-  }
-});
-
 // DELETE - Delete a toy by ID
 toyRoute.delete("/:id", (c) => {
   try {
@@ -108,10 +89,10 @@ toyRoute.post("/", zValidator("json", CreateToySchema), async (c) => {
       updatedAt: null,
     };
 
-    const updatedDataToys = [...toys, newToy];
-    toys = updatedDataToys;
+    const updatedToys = [...toys, newToy];
+    toys = updatedToys;
 
-    return c.json({ message: "Added new toy data", data: newToy }, 201);
+    return c.json(newToy, 201);
   } catch (error) {
     return c.json({ message: "Error creating toy data" }, 500);
   }
@@ -162,7 +143,7 @@ toyRoute.put("/:id", zValidator("json", ReplaceToySchema), async (c) => {
       };
 
       toys = [...toys, newToy];
-      return c.json({ message: "Toy created", data: newToy }, 201);
+      return c.json(newToy, 201);
     }
 
     const replacedToy: Toy = {
@@ -174,7 +155,7 @@ toyRoute.put("/:id", zValidator("json", ReplaceToySchema), async (c) => {
 
     toys = toys.map((toy) => (toy.id === id ? replacedToy : toy));
 
-    return c.json({ message: "Toy replaced", data: replacedToy });
+    return c.json(replacedToy);
   } catch (error) {
     return c.json({ message: "Error replacing toy data" }, 500);
   }

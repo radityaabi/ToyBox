@@ -1,10 +1,11 @@
 [
   {
     "id": "T001",
-    "name": "Rocket Shooter",
     "slug": "rocket-shooter",
+    "name": "Rocket Shooter",
     "categories": {
       "id": 1,
+      "slug": "outdoor-toys",
       "name": "Outdoor Toys"
     },
     "brand": "KidX",
