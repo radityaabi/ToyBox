@@ -26,3 +26,5 @@ bun run dev
 | `/toys/{id}`   | `DELETE` | Delete toy by id |
 | `/toys/{id}`   | `PATCH`  | Patch toy by id  |
 | `/toys/{id}`   | `PUT`    | Update toy by id |
+
+![ERD](/src/asset/db-schema.png)
