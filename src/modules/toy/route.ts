@@ -10,12 +10,12 @@ import {
   ReplaceToy,
   ReplaceToySchema,
   SearchQuerySchema,
+  SearchResultSchema,
   Toy,
   ToySchema,
   UpdateToy,
   UpdateToySchema,
   ParamIdSchema,
-  SearchResultSchema,
 } from "./schema-type";
 
 export const toyRoute = new OpenAPIHono();
@@ -28,11 +28,7 @@ toyRoute.openapi(
     method: "get",
     path: "/",
     description: "Retrieve a list of all toys",
-    responses: {
-      200: {
-        description: "Successfully retrieved list of toys",
-      },
-    },
+    responses: { 200: { description: "Successfully retrieved list of toys" } },
   },
   (c) => {
     return c.json(toys);
@@ -51,27 +47,15 @@ toyRoute.openapi(
     responses: {
       200: {
         description: "Successfully retrieved search results",
-        content: {
-          "application/json": {
-            schema: SearchResultSchema,
-          },
-        },
+        content: { "application/json": { schema: SearchResultSchema } },
       },
       404: {
         description: "No toys found",
-        content: {
-          "application/json": {
-            schema: ErrorSchema,
-          },
-        },
+        content: { "application/json": { schema: ErrorSchema } },
       },
       400: {
         description: "Invalid query parameter",
-        content: {
-          "application/json": {
-            schema: ErrorSchema,
-          },
-        },
+        content: { "application/json": { schema: ErrorSchema } },
       },
     },
   },
@@ -88,7 +72,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "No toys found matching the query",
-          code: 404,
+          code: "TOYBOX_SEARCH_ERROR" as const,
         },
         404
       );
@@ -173,7 +157,10 @@ toyRoute.openapi(
 
       return c.json({ message: "Toy deleted successfully" });
     } catch (error) {
-      return c.json({ message: "Error deleting toy", code: 500 }, 500);
+      return c.json(
+        { message: "Error deleting toy", code: "TOYBOX_DELETE_ERROR" as const },
+        500
+      );
     }
   }
 );
@@ -224,7 +211,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "Error searching toys",
-          code: 500,
+          code: "TOYBOX_ADD_ERROR" as const,
         },
         500
       );
@@ -241,21 +228,13 @@ toyRoute.openapi(
     request: {
       params: ParamIdSchema,
       body: {
-        content: {
-          "application/json": {
-            schema: UpdateToySchema,
-          },
-        },
+        content: { "application/json": { schema: UpdateToySchema } },
       },
     },
     responses: {
       200: {
         description: "Successfully updated the toy",
-        content: {
-          "application/json": {
-            schema: ToySchema,
-          },
-        },
+        content: { "application/json": { schema: ToySchema } },
       },
       404: {
         description: "Toy not found",
@@ -282,7 +261,10 @@ toyRoute.openapi(
 
       const foundToy = toys.find((toy) => toy.id === id);
       if (!foundToy) {
-        return c.json({ message: "Toy not found", code: 404 }, 404);
+        return c.json(
+          { message: "Toy not found", code: "TOYBOX_TOY_NOT_FOUND" as const },
+          404
+        );
       }
 
       const updatedToy = {
@@ -295,7 +277,10 @@ toyRoute.openapi(
 
       return c.json(updatedToy, 200);
     } catch (error) {
-      return c.json({ message: "Error updating toy", code: 500 }, 500);
+      return c.json(
+        { message: "Error updating toy", code: "TOYBOX_UPDATE_ERROR" as const },
+        500
+      );
     }
   }
 );
@@ -309,37 +294,21 @@ toyRoute.openapi(
     request: {
       params: ParamIdSchema,
       body: {
-        content: {
-          "application/json": {
-            schema: ReplaceToySchema,
-          },
-        },
+        content: { "application/json": { schema: ReplaceToySchema } },
       },
     },
     responses: {
       200: {
         description: "Successfully replaced the toy",
-        content: {
-          "application/json": {
-            schema: ToySchema,
-          },
-        },
+        content: { "application/json": { schema: ToySchema } },
       },
       201: {
         description: "Toy created as it did not exist",
-        content: {
-          "application/json": {
-            schema: ToySchema,
-          },
-        },
+        content: { "application/json": { schema: ToySchema } },
       },
       500: {
         description: "Error replacing toy",
-        content: {
-          "application/json": {
-            schema: ErrorSchema,
-          },
-        },
+        content: { "application/json": { schema: ErrorSchema } },
       },
     },
   },
@@ -373,7 +342,13 @@ toyRoute.openapi(
 
       return c.json(replacedToy, 200);
     } catch (error) {
-      return c.json({ message: "Error replacing toy", code: 500 }, 500);
+      return c.json(
+        {
+          message: "Error replacing toy",
+          code: "TOYBOX_REPLACE_ERROR" as const,
+        },
+        500
+      );
     }
   }
 );
