@@ -84,6 +84,7 @@ export const ErrorSchema = z.object({
     .enum([
       "TOYBOX_GET_ERROR",
       "TOYBOX_SEARCH_ERROR",
+      "TOYBOX_SEARCH_NOT_FOUND",
       "TOYBOX_DELETE_ERROR",
       "TOYBOX_ADD_ERROR",
       "TOYBOX_UPDATE_ERROR",

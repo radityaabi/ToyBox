@@ -23,6 +23,26 @@ export const toyRoute = new OpenAPIHono();
 
 let toys = dataToys;
 
+const GET_TOYS_QUERY = `
+  SELECT
+    t.id,
+    t.sku,
+    t.name,
+    t.slug,
+    t.brand,
+    t.price,
+    t.age_range,
+    t.image_url,
+    t.description,
+    t.created_at,
+    t.updated_at,
+    c.id   AS category_id,
+    c.name AS category_name,
+    c.slug AS category_slug
+  FROM toys t
+  JOIN categories c ON t.category_id = c.id
+`;
+
 // GET - Retrieve all toys
 toyRoute.openapi(
   {
@@ -41,33 +61,20 @@ toyRoute.openapi(
     await client.connect();
 
     try {
-      const query = `
-        SELECT
-          t.id,
-          t.sku,
-          t.name,
-          t.slug,
-          t.brand,
-          t.price,
-          t.age_range,
-          t.image_url,
-          t.description,
-          t.created_at,
-          t.updated_at,
-          c.id   AS category_id,
-          c.name AS category_name,
-          c.slug AS category_slug
-        FROM toys t
-        JOIN categories c ON t.category_id = c.id
-      `;
+      const query = GET_TOYS_QUERY;
 
       const result = await client.query(query);
 
-      const toys = result.rows.map((row) => ({
+      const toys: Toy[] = result.rows.map((row) => ({
         id: row.id,
         sku: row.sku,
         name: row.name,
         slug: row.slug,
+        category: {
+          id: row.category_id,
+          name: row.category_name,
+          slug: row.category_slug,
+        },
         brand: row.brand,
         price: row.price,
         ageRange: row.age_range,
@@ -75,11 +82,6 @@ toyRoute.openapi(
         description: row.description,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        category: {
-          id: row.category_id,
-          name: row.category_name,
-          slug: row.category_slug,
-        },
       }));
 
       return c.json(toys);
