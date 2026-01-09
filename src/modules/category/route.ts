@@ -2,11 +2,11 @@ import { OpenAPIHono, z } from "@hono/zod-openapi";
 import { prisma } from "../../lib/prisma";
 import {
   CategorySchema,
-  CreateNewCategorySchema,
+  CreateCategorySchema,
   CreateCategory,
   ErrorSchema,
   GetParamsSchema,
-  ToySchema,
+  ToyResponseSchema,
 } from "../toy/schema-type";
 import slugify from "slugify";
 
@@ -24,7 +24,7 @@ categoryRoute.openapi(
     responses: {
       200: {
         description: "Successfully retrieved the toy",
-        content: { "application/json": { schema: z.array(ToySchema) } },
+        content: { "application/json": { schema: z.array(ToyResponseSchema) } },
       },
       404: {
         description: "Toy not found",
@@ -82,7 +82,7 @@ categoryRoute.openapi(
     path: "/",
     request: {
       body: {
-        content: { "application/json": { schema: CreateNewCategorySchema } },
+        content: { "application/json": { schema: CreateCategorySchema } },
       },
     },
     description: "Create a new category",

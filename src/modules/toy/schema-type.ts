@@ -12,12 +12,12 @@ export const CategorySchema = z.object({
   slug: SlugSchema.openapi({ example: "action-figure" }).optional(),
 });
 
-export const CreateNewCategorySchema = CategorySchema.pick({
+export const CreateCategorySchema = CategorySchema.pick({
   name: true,
   slug: true,
 });
 
-export const ToySchema = z.object({
+export const ToyResponseSchema = z.object({
   id: z.number().openapi({ example: 1 }),
   sku: z.string().min(3).openapi({ example: "TOY-001" }),
   name: z.string().min(3).openapi({ example: "Action Figure" }),
@@ -36,7 +36,7 @@ export const ToySchema = z.object({
     .openapi({ example: "3-5 years" })
     .optional()
     .nullable(),
-  image: z
+  imageUrl: z
     .url()
     .openapi({ example: "https://example.com/image.jpg" })
     .optional()
@@ -51,41 +51,47 @@ export const ToySchema = z.object({
   updatedAt: z.date().optional().nullable(),
 });
 
-export const SearchResultSchema = z.array(ToySchema);
+export const ToyInputSchema = ToyResponseSchema.omit({ category: true }).extend(
+  {
+    categoryId: z.number(),
+  }
+);
 
-export const CreateToySchema = ToySchema.pick({
+export const SearchResultSchema = z.array(ToyResponseSchema);
+
+export const CreateToySchema = ToyInputSchema.pick({
   sku: true,
   name: true,
   slug: true,
-  category: true,
+  categoryId: true,
   brand: true,
   price: true,
   ageRange: true,
-  image: true,
+  imageUrl: true,
   description: true,
 });
 
-export const UpdateToySchema = ToySchema.pick({
+export const UpdateToySchema = ToyInputSchema.pick({
   sku: true,
   name: true,
   slug: true,
-  category: true,
+  categoryId: true,
   brand: true,
   price: true,
   ageRange: true,
-  image: true,
+  imageUrl: true,
   description: true,
 }).partial();
 
-export const ReplaceToySchema = ToySchema.pick({
+export const ReplaceToySchema = ToyInputSchema.pick({
   sku: true,
   name: true,
   slug: true,
-  category: true,
+  categoryId: true,
   brand: true,
   price: true,
   ageRange: true,
-  image: true,
+  imageUrl: true,
   description: true,
 });
 
@@ -113,13 +119,14 @@ export const ErrorSchema = z.object({
       "CATEGORY_EXISTS",
       "CATEGORY_NOT_FOUND",
       "CATEGORY_DELETE_ERROR",
+      "INVALID_QUERY",
+      "SLUG_EXISTS",
     ])
     .openapi({ example: "SEARCH_ERROR" }),
 });
 
-export type Toy = z.infer<typeof ToySchema>;
+export type Toy = z.infer<typeof ToyResponseSchema>;
 export type CreateToy = z.infer<typeof CreateToySchema>;
 export type UpdateToy = z.infer<typeof UpdateToySchema>;
 export type ReplaceToy = z.infer<typeof ReplaceToySchema>;
-
-export type CreateCategory = z.infer<typeof CreateNewCategorySchema>;
+export type CreateCategory = z.infer<typeof CreateCategorySchema>;

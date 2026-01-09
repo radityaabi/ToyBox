@@ -1,7 +1,7 @@
 import { OpenAPIHono, z } from "@hono/zod-openapi";
 import slugify from "slugify";
 import * as pg from "pg";
-
+import { prisma } from "../../lib/prisma";
 import { dataToys } from "./data";
 import {
   CreateToy,
@@ -13,7 +13,7 @@ import {
   SearchQuerySchema,
   SearchResultSchema,
   Toy,
-  ToySchema,
+  ToyResponseSchema,
   UpdateToy,
   UpdateToySchema,
   ParamIdSchema,
@@ -21,27 +21,10 @@ import {
 
 export const toyRoute = new OpenAPIHono();
 
-let toys = dataToys;
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
 
-const GET_TOYS_QUERY = `
-  SELECT
-    t.id,
-    t.sku,
-    t.name,
-    t.slug,
-    t.brand,
-    t.price,
-    t.age_range,
-    t.image_url,
-    t.description,
-    t.created_at,
-    t.updated_at,
-    c.id   AS category_id,
-    c.name AS category_name,
-    c.slug AS category_slug
-  FROM toys t
-  JOIN categories c ON t.category_id = c.id
-`;
+let toys = dataToys;
 
 // GET - Retrieve all toys
 toyRoute.openapi(
@@ -55,43 +38,18 @@ toyRoute.openapi(
   },
   async (c) => {
     try {
-      const client = new pg.Client({
-        connectionString: process.env.DATABASE_URL,
-      });
-
-      await client.connect();
-
-      const query = GET_TOYS_QUERY;
-
-      const result = await client.query(query);
-
-      const toys: Toy[] = result.rows.map((row) => ({
-        id: row.id,
-        sku: row.sku,
-        name: row.name,
-        slug: row.slug,
-        category: {
-          id: row.category_id,
-          name: row.category_name,
-          slug: row.category_slug,
+      const result: Toy[] = await prisma.toy.findMany({
+        include: {
+          category: true,
         },
-        brand: row.brand,
-        price: row.price,
-        ageRange: row.age_range,
-        imageUrl: row.image_url,
-        description: row.description,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
-
-      await client.end();
-      return c.json(toys);
+      });
+      return c.json(result);
     } catch (error) {
       return c.json(
         {
           message: "Error retrieving toys",
           code: "GET_ERROR",
-          error: error,
+          error: errorMessage(error),
         },
         500
       );
@@ -113,36 +71,68 @@ toyRoute.openapi(
         description: "Successfully retrieved search results",
         content: { "application/json": { schema: SearchResultSchema } },
       },
-      404: {
-        description: "No toys found",
-        content: { "application/json": { schema: ErrorSchema } },
-      },
       400: {
         description: "Invalid query parameter",
         content: { "application/json": { schema: ErrorSchema } },
       },
+      404: {
+        description: "No toys found",
+        content: { "application/json": { schema: ErrorSchema } },
+      },
+      500: {
+        description: "Error searching toys",
+        content: { "application/json": { schema: ErrorSchema } },
+      },
     },
   },
-  (c) => {
-    const { q } = c.req.valid("query");
+  async (c) => {
+    try {
+      const { q } = c.req.valid("query");
+      const query = q.toLowerCase();
 
-    const query = q.toLowerCase();
+      if (!query || query.trim() === "" || query.length < 2) {
+        return c.json(
+          {
+            message: "Invalid query parameter",
+            code: "INVALID_QUERY" as const,
+          },
+          400
+        );
+      }
 
-    const searchResults = toys.filter((toy) =>
-      toy.name.toLowerCase().includes(query)
-    );
+      const result: Toy[] = await prisma.toy.findMany({
+        where: {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        include: {
+          category: true,
+        },
+      });
 
-    if (searchResults.length === 0) {
+      if (result.length === 0) {
+        return c.json(
+          {
+            message: "No toys found matching the query",
+            code: "SEARCH_ERROR" as const,
+          },
+          404
+        );
+      }
+
+      return c.json(result, 200);
+    } catch (error) {
       return c.json(
         {
-          message: "No toys found matching the query",
+          message: "Error searching toys",
           code: "SEARCH_ERROR" as const,
+          error: errorMessage(error),
         },
-        404
+        500
       );
     }
-
-    return c.json(searchResults, 200);
   }
 );
 
@@ -158,7 +148,7 @@ toyRoute.openapi(
     responses: {
       200: {
         description: "Successfully retrieved the toy",
-        content: { "application/json": { schema: ToySchema } },
+        content: { "application/json": { schema: ToyResponseSchema } },
       },
       404: {
         description: "Toy not found",
@@ -168,16 +158,24 @@ toyRoute.openapi(
       },
     },
   },
-  (c) => {
+  async (c) => {
     try {
       const slug = c.req.param("slug");
-      const foundToy = toys.find((toy) => toy.slug === slug);
 
-      if (foundToy) {
-        return c.json(foundToy);
-      } else {
+      const result: Toy[] = await prisma.toy.findMany({
+        where: {
+          slug: slug,
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      if (!result) {
         return c.json({ message: "Toy not found" }, 404);
       }
+
+      return c.json(result);
     } catch (error) {
       return c.json({ message: "Error retrieving toy by slug" }, 500);
     }
@@ -207,17 +205,21 @@ toyRoute.openapi(
       },
     },
   },
-  (c) => {
+  async (c) => {
     try {
       const id = Number(c.req.param("id"));
-      const foundToy = toys.find((toy) => toy.id === id);
 
-      if (!foundToy) {
+      const result = await prisma.toy.findUnique({
+        where: { id },
+      });
+
+      if (!result) {
         return c.json({ message: "Toy not found", code: 404 }, 404);
       }
 
-      const updatedDataToys = toys.filter((toy) => toy.id !== id);
-      toys = updatedDataToys;
+      await prisma.toy.delete({
+        where: { id },
+      });
 
       return c.json({ message: "Toy deleted successfully" });
     } catch (error) {
@@ -241,7 +243,15 @@ toyRoute.openapi(
     responses: {
       201: {
         description: "Successfully created a new toy",
-        content: { "application/json": { schema: ToySchema } },
+        content: { "application/json": { schema: ToyResponseSchema } },
+      },
+      400: {
+        description: "Bad Request",
+        content: { "application/json": { schema: ErrorSchema } },
+      },
+      404: {
+        description: "Category not found",
+        content: { "application/json": { schema: ErrorSchema } },
       },
       500: {
         content: { "application/json": { schema: ErrorSchema } },
@@ -249,28 +259,61 @@ toyRoute.openapi(
       },
     },
   },
-  (c) => {
+  async (c) => {
     try {
-      const toyJSON: CreateToy = c.req.valid("json");
-      const newId = toys.length > 0 ? toys[toys.length - 1].id + 1 : 1;
-      const newSlug = slugify(toyJSON.name, {
+      const payload: CreateToy = c.req.valid("json");
+
+      // Check if category exists
+      const findCategory = await prisma.category.findUnique({
+        where: { id: payload.categoryId },
+      });
+
+      if (!findCategory) {
+        return c.json(
+          {
+            message: "Category not found",
+            code: "CATEGORY_NOT_FOUND" as const,
+          },
+          404
+        );
+      }
+
+      // Check for existing toy with the same slug
+      const newSlug = slugify(payload.name, {
         lower: true,
         strict: true,
         trim: true,
       });
+      const checkSlug = await prisma.toy.findFirst({
+        where: { slug: newSlug },
+      });
 
-      const newToy = {
-        id: newId,
-        slug: newSlug,
-        ...toyJSON,
-        createdAt: new Date(),
-        updatedAt: null,
-      };
+      if (checkSlug) {
+        return c.json(
+          {
+            message: "Toy with the same slug already exists",
+            code: "SLUG_EXISTS" as const,
+          },
+          400
+        );
+      }
 
-      const updatedDataToys = [...toys, newToy];
-      toys = updatedDataToys;
+      //Create new SKU
+      const createdToy: Toy = await prisma.toy.create({
+        data: {
+          sku: payload.sku,
+          name: payload.name,
+          slug: newSlug,
+          categoryId: payload.categoryId,
+          brand: payload.brand,
+          price: payload.price || 100,
+          ageRange: payload.ageRange,
+          imageUrl: payload.imageUrl,
+          description: payload.description,
+        },
+      });
 
-      return c.json(newToy, 201);
+      return c.json(createdToy, 201);
     } catch (error) {
       return c.json(
         {
@@ -298,7 +341,7 @@ toyRoute.openapi(
     responses: {
       200: {
         description: "Successfully updated the toy",
-        content: { "application/json": { schema: ToySchema } },
+        content: { "application/json": { schema: ToyResponseSchema } },
       },
       404: {
         description: "Toy not found",
@@ -318,12 +361,15 @@ toyRoute.openapi(
       },
     },
   },
-  (c) => {
+  async (c) => {
     try {
       const id = Number(c.req.param("id"));
       const payload: UpdateToy = c.req.valid("json");
 
-      const foundToy = toys.find((toy) => toy.id === id);
+      const foundToy = await prisma.toy.findUnique({
+        where: { id: id },
+      });
+
       if (!foundToy) {
         return c.json(
           { message: "Toy not found", code: "TOY_NOT_FOUND" as const },
@@ -364,11 +410,11 @@ toyRoute.openapi(
     responses: {
       200: {
         description: "Successfully replaced the toy",
-        content: { "application/json": { schema: ToySchema } },
+        content: { "application/json": { schema: ToyResponseSchema } },
       },
       201: {
         description: "Toy created as it did not exist",
-        content: { "application/json": { schema: ToySchema } },
+        content: { "application/json": { schema: ToyResponseSchema } },
       },
       500: {
         description: "Error replacing toy",
