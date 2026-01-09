@@ -7,7 +7,7 @@ import {
   CreateToy,
   CreateToySchema,
   ErrorSchema,
-  GetToyParamsSchema,
+  GetParamsSchema,
   ReplaceToy,
   ReplaceToySchema,
   SearchQuerySchema,
@@ -90,7 +90,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "Error retrieving toys",
-          code: "TOYBOX_GET_ERROR",
+          code: "GET_ERROR",
           error: error,
         },
         500
@@ -136,7 +136,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "No toys found matching the query",
-          code: "TOYBOX_SEARCH_ERROR" as const,
+          code: "SEARCH_ERROR" as const,
         },
         404
       );
@@ -152,7 +152,7 @@ toyRoute.openapi(
     method: "get",
     path: "/{slug}",
     request: {
-      params: GetToyParamsSchema,
+      params: GetParamsSchema,
     },
     description: "Retrieve a toy by its slug",
     responses: {
@@ -222,7 +222,7 @@ toyRoute.openapi(
       return c.json({ message: "Toy deleted successfully" });
     } catch (error) {
       return c.json(
-        { message: "Error deleting toy", code: "TOYBOX_DELETE_ERROR" as const },
+        { message: "Error deleting toy", code: "DELETE_ERROR" as const },
         500
       );
     }
@@ -275,7 +275,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "Error searching toys",
-          code: "TOYBOX_ADD_ERROR" as const,
+          code: "ADD_ERROR" as const,
         },
         500
       );
@@ -326,7 +326,7 @@ toyRoute.openapi(
       const foundToy = toys.find((toy) => toy.id === id);
       if (!foundToy) {
         return c.json(
-          { message: "Toy not found", code: "TOYBOX_TOY_NOT_FOUND" as const },
+          { message: "Toy not found", code: "TOY_NOT_FOUND" as const },
           404
         );
       }
@@ -342,7 +342,7 @@ toyRoute.openapi(
       return c.json(updatedToy, 200);
     } catch (error) {
       return c.json(
-        { message: "Error updating toy", code: "TOYBOX_UPDATE_ERROR" as const },
+        { message: "Error updating toy", code: "UPDATE_ERROR" as const },
         500
       );
     }
@@ -409,7 +409,7 @@ toyRoute.openapi(
       return c.json(
         {
           message: "Error replacing toy",
-          code: "TOYBOX_REPLACE_ERROR" as const,
+          code: "REPLACE_ERROR" as const,
         },
         500
       );

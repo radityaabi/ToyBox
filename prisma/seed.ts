@@ -14,7 +14,9 @@ async function main() {
 
   // 2️⃣ Seed Toys
   const toysWithCategoryId = toys.map((toy) => {
-    const category = resultCategories.find((c) => c.slug === toy.categorySlug);
+    const category = resultCategories.find(
+      (category) => category.slug === toy.categorySlug
+    );
     if (!category) {
       throw new Error(`Category with slug ${toy.categorySlug} not found`);
     }
@@ -40,10 +42,11 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error("❌ Seeding failed:", e);
-    process.exit(1);
-  })
-  .finally(async () => {
+  .then(async () => {
     await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
   });
