@@ -1,8 +1,6 @@
 import { OpenAPIHono, z } from "@hono/zod-openapi";
 import slugify from "slugify";
-import * as pg from "pg";
 import { prisma } from "../../lib/prisma";
-import { dataToys } from "./data";
 import {
   CreateToy,
   CreateToySchema,
@@ -17,14 +15,13 @@ import {
   UpdateToy,
   UpdateToySchema,
   ParamIdSchema,
-} from "./schema-type";
+} from "../../types/schema-type";
+import { responseSelect } from "../../lib/prisma-select";
 
 export const toyRoute = new OpenAPIHono();
 
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
-
-let toys = dataToys;
 
 // GET - Retrieve all toys
 toyRoute.openapi(
@@ -38,9 +35,10 @@ toyRoute.openapi(
   },
   async (c) => {
     try {
-      const result: Toy[] = await prisma.toy.findMany({
-        include: {
-          category: true,
+      const result = await prisma.toy.findMany({
+        select: responseSelect,
+        orderBy: {
+          id: "asc",
         },
       });
       return c.json(result);
@@ -107,8 +105,9 @@ toyRoute.openapi(
             mode: "insensitive",
           },
         },
-        include: {
-          category: true,
+        select: responseSelect,
+        orderBy: {
+          id: "asc",
         },
       });
 
@@ -166,9 +165,7 @@ toyRoute.openapi(
         where: {
           slug: slug,
         },
-        include: {
-          category: true,
-        },
+        select: responseSelect,
       });
 
       if (!result) {
@@ -284,15 +281,15 @@ toyRoute.openapi(
         strict: true,
         trim: true,
       });
-      const checkSlug = await prisma.toy.findFirst({
-        where: { slug: newSlug },
+      const existingData = await prisma.toy.findFirst({
+        where: { OR: [{ slug: newSlug }, { sku: payload.sku }] },
       });
 
-      if (checkSlug) {
+      if (existingData) {
         return c.json(
           {
-            message: "Toy with the same slug already exists",
-            code: "SLUG_EXISTS" as const,
+            message: "Toy with the same slug or sku already exists",
+            code: "TOY_EXISTS" as const,
           },
           400
         );
@@ -319,6 +316,7 @@ toyRoute.openapi(
         {
           message: "Error searching toys",
           code: "ADD_ERROR" as const,
+          error: errorMessage(error),
         },
         500
       );
@@ -377,18 +375,25 @@ toyRoute.openapi(
         );
       }
 
-      const updatedToy = {
-        ...foundToy,
-        ...payload,
-        updatedAt: new Date(),
-      };
-
-      toys = toys.map((toy) => (toy.id === id ? updatedToy : toy));
+      const updatedToy = await prisma.toy.update({
+        where: { id: id },
+        data: {
+          ...payload,
+          slug: payload.name
+            ? slugify(payload.name, { lower: true, strict: true, trim: true })
+            : foundToy.slug,
+        },
+        select: responseSelect,
+      });
 
       return c.json(updatedToy, 200);
     } catch (error) {
       return c.json(
-        { message: "Error updating toy", code: "UPDATE_ERROR" as const },
+        {
+          message: "Error updating toy",
+          code: "UPDATE_ERROR" as const,
+          error: errorMessage(error),
+        },
         500
       );
     }
@@ -416,41 +421,73 @@ toyRoute.openapi(
         description: "Toy created as it did not exist",
         content: { "application/json": { schema: ToyResponseSchema } },
       },
+      400: {
+        description: "Toy with the same slug or sku already exists",
+        content: { "application/json": { schema: ErrorSchema } },
+      },
       500: {
         description: "Error replacing toy",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
   },
-  (c) => {
+  async (c) => {
     try {
       const id = Number(c.req.param("id"));
       const payload: ReplaceToy = c.req.valid("json");
 
-      const foundToy = toys.find((toy) => toy.id === id);
+      const foundToy = await prisma.toy.findUnique({
+        where: { id: id },
+      });
 
       if (!foundToy) {
-        const newToy: Toy = {
-          id,
-          ...payload,
-          createdAt: new Date(),
-          updatedAt: null,
-        };
+        const newSlug = slugify(payload.name, {
+          lower: true,
+          strict: true,
+          trim: true,
+        });
 
-        toys = [...toys, newToy];
-        return c.json(newToy, 201);
+        const existingData = await prisma.toy.findFirst({
+          where: { OR: [{ slug: newSlug }, { sku: payload.sku }] },
+        });
+
+        if (existingData) {
+          return c.json(
+            {
+              message: "Toy with the same slug or sku already exists",
+              code: "TOY_EXISTS" as const,
+            },
+            400
+          );
+        }
+
+        const createdToy: Toy = await prisma.toy.create({
+          data: {
+            sku: payload.sku,
+            name: payload.name,
+            slug: newSlug,
+            categoryId: payload.categoryId,
+            brand: payload.brand,
+            price: payload.price || 100,
+            ageRange: payload.ageRange,
+            imageUrl: payload.imageUrl,
+            description: payload.description,
+          },
+          select: responseSelect,
+        });
+        return c.json(createdToy, 201);
       }
 
-      const replacedToy: Toy = {
-        id,
-        ...payload,
-        createdAt: foundToy.createdAt,
-        updatedAt: new Date(),
-      };
+      const updatedToy: Toy = await prisma.toy.update({
+        where: { id: id },
+        data: {
+          ...payload,
+          updatedAt: new Date(),
+        },
+        select: responseSelect,
+      });
 
-      toys = toys.map((toy) => (toy.id === id ? replacedToy : toy));
-
-      return c.json(replacedToy, 200);
+      return c.json(updatedToy, 200);
     } catch (error) {
       return c.json(
         {

@@ -7,8 +7,9 @@ import {
   ErrorSchema,
   GetParamsSchema,
   ToyResponseSchema,
-} from "../toy/schema-type";
+} from "../../types/schema-type";
 import slugify from "slugify";
+import { responseSelect } from "../../lib/prisma-select";
 
 export const categoryRoute = new OpenAPIHono();
 
@@ -45,8 +46,9 @@ categoryRoute.openapi(
             slug: c.req.param("slug"),
           } as any,
         },
-        include: {
-          category: true,
+        select: responseSelect,
+        orderBy: {
+          id: "asc",
         },
       });
       const foundCategory = result.filter((toy) => toy.category.slug === slug);
@@ -105,9 +107,7 @@ categoryRoute.openapi(
     try {
       const payload: CreateCategory = c.req.valid("json");
 
-      const categorySlug = payload.slug
-        ? slugify(payload.slug, { strict: true, lower: true })
-        : slugify(payload.name, { strict: true, lower: true });
+      const categorySlug = slugify(payload.name, { strict: true, lower: true });
 
       const checkExistingCategory = await prisma.category.findFirst({
         where: {

@@ -1,4 +1,5 @@
 import { logger } from "hono/logger";
+import { cors } from "hono/cors";
 import { toyRoute } from "./modules/toy/route";
 import { categoryRoute } from "./modules/category/route";
 import { Scalar } from "@scalar/hono-api-reference";
@@ -7,6 +8,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 const app = new OpenAPIHono();
 
 app.use(logger());
+app.use(cors());
 
 app.route("/toys", toyRoute);
 app.route("/categories", categoryRoute);
