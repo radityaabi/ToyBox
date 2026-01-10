@@ -10,6 +10,8 @@ import {
 } from "../../types/schema-type";
 import slugify from "slugify";
 import { responseSelect } from "../../lib/prisma-select";
+import { getSystemErrorMessage } from "node:util";
+import { errorMessage } from "../../utils/error";
 
 export const categoryRoute = new OpenAPIHono();
 
@@ -21,18 +23,18 @@ categoryRoute.openapi(
     request: {
       params: GetParamsSchema,
     },
-    description: "Retrieve a toy by its slug",
+    description: "Retrieve toys by category",
     responses: {
       200: {
-        description: "Successfully retrieved the toy",
+        description: "Successfully retrieved the toys by category",
         content: { "application/json": { schema: z.array(ToyResponseSchema) } },
       },
       404: {
-        description: "Toy not found",
+        description: "Category not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
       500: {
-        description: "Error retrieving toy by slug",
+        description: "Error retrieving category",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -40,36 +42,44 @@ categoryRoute.openapi(
   async (c) => {
     try {
       const slug = c.req.param("slug");
+
+      // Check if category exists
+      const category = await prisma.category.findFirst({
+        where: {
+          slug: slug,
+        },
+      });
+
+      if (!category) {
+        return c.json(
+          {
+            message: "Category not found",
+            code: "CATEGORY_NOT_FOUND" as const,
+          },
+          404
+        );
+      }
+
+      // Retrieve toys by category
       const result = await prisma.toy.findMany({
         where: {
           category: {
-            slug: c.req.param("slug"),
-          } as any,
+            slug: slug,
+          },
         },
         select: responseSelect,
         orderBy: {
           id: "asc",
         },
       });
-      const foundCategory = result.filter((toy) => toy.category.slug === slug);
 
-      if (foundCategory.length > 0) {
-        return c.json(foundCategory, 200);
-      } else {
-        return c.json(
-          {
-            message: "Category not found",
-            code: "GET_ERROR" as const,
-          },
-          404
-        );
-      }
+      return c.json(result, 200);
     } catch (error) {
       return c.json(
         {
-          message: "Error retrieving category by slug",
+          message: "Error retrieving category",
           code: "GET_ERROR" as const,
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage(error),
         },
         500
       );
@@ -139,7 +149,7 @@ categoryRoute.openapi(
         {
           message: "Error creating category",
           code: "CATEGORY_ADD_ERROR" as const,
-          error: error instanceof Error ? error.message : String(error),
+          error: errorMessage(error),
         },
         500
       );

@@ -22,7 +22,6 @@ export const CategorySchema = z.object({
 
 export const CreateCategorySchema = CategorySchema.pick({
   name: true,
-  slug: true,
 });
 
 const ToyBaseSchema = z.object({
